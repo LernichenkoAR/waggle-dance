@@ -181,6 +181,11 @@ public class WaggleDanceRunner implements WaggleDance.ContextListener {
       return this;
     }
 
+    public Builder withPrimaryMappedDatbases(String[] mappableDatabases) {
+      primaryMetaStore.setMappedDatabases(Arrays.asList(mappableDatabases));
+      return this;
+    }
+
     public Builder graphite(String graphiteHost, int graphitePort, String graphitePrefix, long pollInterval) {
       graphiteConfiguration.setHost(graphiteHost);
       graphiteConfiguration.setPort(graphitePort);

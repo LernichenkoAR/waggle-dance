@@ -106,10 +106,18 @@ public class StaticDatabaseMappingService implements MappingEventListener {
     MetaStoreMapping metaStoreMapping = metaStoreMappingFactory.newInstance(metaStore);
 
     if (metaStore.getFederationType() == PRIMARY) {
-      validatePrimaryMetastoreDatabases(metaStoreMapping);
+      List<String> mappableDatabases;
+      try {
+        List<String> primaryDatabases = metaStoreMapping.getClient().get_all_databases();
+        validatePrimaryMetastoreDatabases(primaryDatabases);
+        mappableDatabases = applyWhitelist(primaryDatabases, metaStore.getMappedDatabases());
+      } catch (TException e) {
+        throw new WaggleDanceException("Can't validate database clashes", e);
+      }
       primaryDatabaseMapping = createDatabaseMapping(metaStoreMapping);
       primaryDatabasesCache.invalidateAll();
       mappingsByMetaStoreName.put(metaStoreMapping.getMetastoreMappingName(), primaryDatabaseMapping);
+      addDatabaseMappings(mappableDatabases, primaryDatabaseMapping);
     } else {
       FederatedMetaStore federatedMetaStore = (FederatedMetaStore) metaStore;
       List<String> mappableDatabases = Collections.emptyList();
@@ -128,20 +136,16 @@ public class StaticDatabaseMappingService implements MappingEventListener {
     }
   }
 
-  private void validatePrimaryMetastoreDatabases(MetaStoreMapping newPrimaryMetaStoreMapping) {
-    try {
-      for (String database : newPrimaryMetaStoreMapping.getClient().get_all_databases()) {
-        if (mappingsByDatabaseName.containsKey(database)) {
-          throw new WaggleDanceException("Database clash, found '"
-              + database
-              + "' in primary that was already mapped to a federated metastore '"
-              + mappingsByDatabaseName.get(database).getMetastoreMappingName()
-              + "', please remove the database from the federated metastore list it can't be"
-              + " accessed via Waggle Dance");
-        }
+  private void validatePrimaryMetastoreDatabases(List<String> primaryDatabases) {
+    for (String database : primaryDatabases) {
+      if (mappingsByDatabaseName.containsKey(database)) {
+        throw new WaggleDanceException("Database clash, found '"
+            + database
+            + "' in primary that was already mapped to a federated metastore '"
+            + mappingsByDatabaseName.get(database).getMetastoreMappingName()
+            + "', please remove the database from the federated metastore list it can't be"
+            + " accessed via Waggle Dance");
       }
-    } catch (TException e) {
-      throw new WaggleDanceException("Can't validate database clashes", e);
     }
   }
 

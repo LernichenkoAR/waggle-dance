@@ -784,4 +784,28 @@ public class WaggleDanceIntegrationTest {
     List<String> expected = Lists.newArrayList("default", LOCAL_DATABASE, PREFIXED_REMOTE_DATABASE);
     assertThat(allDatabases, is(expected));
   }
+
+  @Test
+  public void primaryMappedDatabases() throws Exception {
+
+    runner = WaggleDanceRunner
+        .builder(configLocation)
+        .databaseResolution(DatabaseResolution.MANUAL)
+        .overwriteConfigOnShutdown(false)
+        .primary("primary", localServer.getThriftConnectionUri(),
+            AccessControlType.READ_AND_WRITE_AND_CREATE_ON_DATABASE_WHITELIST)
+        .withPrimaryMappedDatbases(new String[] {"randomDb"})
+        .build();
+
+    runWaggleDance(runner);
+
+
+    HiveMetaStoreClient proxy = getWaggleDanceClient();
+
+    List<String> allDatabases = proxy.getAllDatabases();
+    for(String database : allDatabases) {
+      System.out.println(database);
+    }
+    assertThat(allDatabases.size(), is(0));
+  }
 }

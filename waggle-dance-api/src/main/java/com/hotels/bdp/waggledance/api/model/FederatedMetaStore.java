@@ -23,7 +23,7 @@ import javax.validation.constraints.NotNull;
 
 public class FederatedMetaStore extends AbstractMetaStore {
 
-  private @NotNull List<String> mappedDatabases = Collections.emptyList();
+//  private @NotNull List<String> mappedDatabases = Collections.emptyList();
 
   public FederatedMetaStore() {}
 
@@ -44,8 +44,8 @@ public class FederatedMetaStore extends AbstractMetaStore {
       String name,
       String remoteMetaStoreUris,
       AccessControlType accessControlType,
-      List<String> writeableDatabaseWhiteList) {
-    super(name, remoteMetaStoreUris, accessControlType, writeableDatabaseWhiteList);
+      List<String> writableDatabaseWhiteList) {
+    super(name, remoteMetaStoreUris, accessControlType, writableDatabaseWhiteList);
   }
 
   @Override

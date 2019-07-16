@@ -88,24 +88,23 @@ public class PrefixBasedDatabaseMappingService implements MappingEventListener {
     }
   }
 
-  private void add(AbstractMetaStore federatedMetaStore) {
-    MetaStoreMapping metaStoreMapping = metaStoreMappingFactory.newInstance(federatedMetaStore);
+  private void add(AbstractMetaStore metaStore) {
+    MetaStoreMapping metaStoreMapping = metaStoreMappingFactory.newInstance(metaStore);
 
-    if (federatedMetaStore.getFederationType() == PRIMARY) {
+    if (metaStore.getFederationType() == PRIMARY) {
       primaryDatabaseMapping = createDatabaseMapping(metaStoreMapping);
+      Whitelist mappedDbWhitelist = getWhitelistedDatabases(metaStore);
       mappingsByPrefix.put(metaStoreMapping.getDatabasePrefix(), primaryDatabaseMapping);
+      mappedDbByPrefix.put(metaStoreMapping.getDatabasePrefix(), mappedDbWhitelist);
     } else {
       mappingsByPrefix.put(metaStoreMapping.getDatabasePrefix(), createDatabaseMapping(metaStoreMapping));
-      Whitelist mappedDbWhitelist;
-      if (FederatedMetaStore.class.isAssignableFrom(federatedMetaStore.getClass())) {
-        mappedDbWhitelist = getWhitelistedDatabases((FederatedMetaStore) federatedMetaStore);
-        mappedDbByPrefix.put(metaStoreMapping.getDatabasePrefix(), mappedDbWhitelist);
-      }
+      Whitelist mappedDbWhitelist = getWhitelistedDatabases( metaStore);
+      mappedDbByPrefix.put(metaStoreMapping.getDatabasePrefix(), mappedDbWhitelist);
     }
   }
 
-  private Whitelist getWhitelistedDatabases(FederatedMetaStore federatedMetaStore) {
-    return new Whitelist(federatedMetaStore.getMappedDatabases());
+  private Whitelist getWhitelistedDatabases(AbstractMetaStore metaStore) {
+    return new Whitelist(metaStore.getMappedDatabases());
   }
 
   private DatabaseMapping createDatabaseMapping(MetaStoreMapping metaStoreMapping) {

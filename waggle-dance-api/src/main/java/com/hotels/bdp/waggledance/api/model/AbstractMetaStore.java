@@ -199,6 +199,7 @@ public abstract class AbstractMetaStore {
         .add("remoteMetaStoreUris", remoteMetaStoreUris)
         .add("metastoreTunnel", metastoreTunnel)
         .add("accessControlType", accessControlType)
+        .add("mappedDatabases", mappedDatabases)
         .add("writableDatabaseWhiteList", writableDatabaseWhitelist)
         .add("status", status)
         .toString();
