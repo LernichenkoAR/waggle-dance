@@ -63,11 +63,4 @@ public class FederatedMetaStore extends AbstractMetaStore {
     return prefix;
   }
 
-  public List<String> getMappedDatabases() {
-    return mappedDatabases;
-  }
-
-  public void setMappedDatabases(List<String> mappedDatabases) {
-    this.mappedDatabases = mappedDatabases;
-  }
 }

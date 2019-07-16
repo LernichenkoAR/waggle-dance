@@ -19,6 +19,7 @@ import static com.hotels.bdp.waggledance.api.model.ConnectionType.DIRECT;
 import static com.hotels.bdp.waggledance.api.model.ConnectionType.TUNNELED;
 
 import java.beans.Transient;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -47,6 +48,7 @@ public abstract class AbstractMetaStore {
   private @NotBlank String remoteMetaStoreUris;
   private @Valid MetastoreTunnel metastoreTunnel;
   private @NotNull AccessControlType accessControlType = AccessControlType.READ_ONLY;
+  private @NotNull List<String> mappedDatabases = Collections.emptyList();
   private transient @JsonProperty @NotNull MetaStoreStatus status = MetaStoreStatus.UNKNOWN;
   private long latency = 0;
 
@@ -142,6 +144,14 @@ public abstract class AbstractMetaStore {
 
   public void setWritableDatabaseWhiteList(List<String> writableDatabaseWhitelist) {
     this.writableDatabaseWhitelist = writableDatabaseWhitelist;
+  }
+
+  public List<String> getMappedDatabases() {
+    return mappedDatabases;
+  }
+
+  public void setMappedDatabases(List<String> mappedDatabases) {
+    this.mappedDatabases = mappedDatabases;
   }
 
   public long getLatency() {
