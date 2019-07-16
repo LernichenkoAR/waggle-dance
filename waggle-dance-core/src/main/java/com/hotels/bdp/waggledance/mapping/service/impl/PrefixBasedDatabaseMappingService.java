@@ -43,7 +43,6 @@ import com.google.common.collect.ImmutableList.Builder;
 
 import com.hotels.bdp.waggledance.api.WaggleDanceException;
 import com.hotels.bdp.waggledance.api.model.AbstractMetaStore;
-import com.hotels.bdp.waggledance.api.model.FederatedMetaStore;
 import com.hotels.bdp.waggledance.api.model.FederationType;
 import com.hotels.bdp.waggledance.mapping.model.DatabaseMapping;
 import com.hotels.bdp.waggledance.mapping.model.DatabaseMappingImpl;
@@ -80,11 +79,11 @@ public class PrefixBasedDatabaseMappingService implements MappingEventListener {
     init(initialMetastores);
   }
 
-  private void init(List<AbstractMetaStore> federatedMetaStores) {
+  private void init(List<AbstractMetaStore> metaStores) {
     mappingsByPrefix = Collections.synchronizedMap(new LinkedHashMap<>());
     mappedDbByPrefix = new ConcurrentHashMap<>();
-    for (AbstractMetaStore federatedMetaStore : federatedMetaStores) {
-      add(federatedMetaStore);
+    for (AbstractMetaStore metaStore : metaStores) {
+      add(metaStore);
     }
   }
 
@@ -93,14 +92,13 @@ public class PrefixBasedDatabaseMappingService implements MappingEventListener {
 
     if (metaStore.getFederationType() == PRIMARY) {
       primaryDatabaseMapping = createDatabaseMapping(metaStoreMapping);
-      Whitelist mappedDbWhitelist = getWhitelistedDatabases(metaStore);
       mappingsByPrefix.put(metaStoreMapping.getDatabasePrefix(), primaryDatabaseMapping);
-      mappedDbByPrefix.put(metaStoreMapping.getDatabasePrefix(), mappedDbWhitelist);
     } else {
       mappingsByPrefix.put(metaStoreMapping.getDatabasePrefix(), createDatabaseMapping(metaStoreMapping));
-      Whitelist mappedDbWhitelist = getWhitelistedDatabases( metaStore);
-      mappedDbByPrefix.put(metaStoreMapping.getDatabasePrefix(), mappedDbWhitelist);
     }
+
+    Whitelist mappedDbWhitelist = getWhitelistedDatabases(metaStore);
+    mappedDbByPrefix.put(metaStoreMapping.getDatabasePrefix(), mappedDbWhitelist);
   }
 
   private Whitelist getWhitelistedDatabases(AbstractMetaStore metaStore) {
@@ -114,11 +112,11 @@ public class PrefixBasedDatabaseMappingService implements MappingEventListener {
     return new DatabaseMappingImpl(metaStoreMapping, queryMapping);
   }
 
-  private void remove(AbstractMetaStore federatedMetaStore) {
-    if (federatedMetaStore.getFederationType() == PRIMARY) {
+  private void remove(AbstractMetaStore metaStore) {
+    if (metaStore.getFederationType() == PRIMARY) {
       primaryDatabaseMapping = null;
     }
-    DatabaseMapping removed = mappingsByPrefix.remove(metaStoreMappingFactory.prefixNameFor(federatedMetaStore));
+    DatabaseMapping removed = mappingsByPrefix.remove(metaStoreMappingFactory.prefixNameFor(metaStore));
     IOUtils.closeQuietly(removed);
   }
 
@@ -154,11 +152,11 @@ public class PrefixBasedDatabaseMappingService implements MappingEventListener {
   }
 
   @Override
-  public void onUnregister(AbstractMetaStore federatedMetaStore) {
+  public void onUnregister(AbstractMetaStore metaStore) {
     // Synchronizing on the mappingsByPrefix map field so we ensure the implemented FederationEventListener methods are
     // processes sequentially
     synchronized (mappingsByPrefix) {
-      remove(federatedMetaStore);
+      remove(metaStore);
     }
   }
 
@@ -177,7 +175,7 @@ public class PrefixBasedDatabaseMappingService implements MappingEventListener {
   private boolean includeInResults(MetaStoreMapping metaStoreMapping, String prefixedDatabaseName) {
     return includeInResults(metaStoreMapping)
         && isWhitelisted(metaStoreMapping.getDatabasePrefix(),
-            metaStoreMapping.transformInboundDatabaseName(prefixedDatabaseName));
+        metaStoreMapping.transformInboundDatabaseName(prefixedDatabaseName));
   }
 
   @Override

@@ -105,35 +105,30 @@ public class StaticDatabaseMappingService implements MappingEventListener {
   private void add(AbstractMetaStore metaStore) {
     MetaStoreMapping metaStoreMapping = metaStoreMappingFactory.newInstance(metaStore);
 
-    if (metaStore.getFederationType() == PRIMARY) {
-      List<String> mappableDatabases;
+    List<String> mappableDatabases = Collections.emptyList();
+    DatabaseMapping databaseMapping;
+
+    if (metaStoreMapping.isAvailable()) {
       try {
-        List<String> primaryDatabases = metaStoreMapping.getClient().get_all_databases();
-        validatePrimaryMetastoreDatabases(primaryDatabases);
-        mappableDatabases = applyWhitelist(primaryDatabases, metaStore.getMappedDatabases());
+        List<String> allDatabases = metaStoreMapping.getClient().get_all_databases();
+        mappableDatabases = applyWhitelist(allDatabases, metaStore.getMappedDatabases());
       } catch (TException e) {
-        throw new WaggleDanceException("Can't validate database clashes", e);
+        LOG.error("Could not get databases for metastore {}", metaStore.getRemoteMetaStoreUris(), e);
       }
+    }
+
+    if (metaStore.getFederationType() == PRIMARY) {
+      validatePrimaryMetastoreDatabases(mappableDatabases);
       primaryDatabaseMapping = createDatabaseMapping(metaStoreMapping);
       primaryDatabasesCache.invalidateAll();
-      mappingsByMetaStoreName.put(metaStoreMapping.getMetastoreMappingName(), primaryDatabaseMapping);
-      addDatabaseMappings(mappableDatabases, primaryDatabaseMapping);
+      databaseMapping = primaryDatabaseMapping;
     } else {
-      FederatedMetaStore federatedMetaStore = (FederatedMetaStore) metaStore;
-      List<String> mappableDatabases = Collections.emptyList();
-      if (metaStoreMapping.isAvailable()) {
-        try {
-          List<String> allFederatedDatabases = metaStoreMapping.getClient().get_all_databases();
-          mappableDatabases = applyWhitelist(allFederatedDatabases, federatedMetaStore.getMappedDatabases());
-        } catch (TException e) {
-          LOG.error("Could not get databases for metastore {}", federatedMetaStore.getRemoteMetaStoreUris(), e);
-        }
-      }
       validateFederatedMetastoreDatabases(mappableDatabases, metaStoreMapping);
-      DatabaseMapping databaseMapping = createDatabaseMapping(metaStoreMapping);
-      mappingsByMetaStoreName.put(metaStoreMapping.getMetastoreMappingName(), databaseMapping);
-      addDatabaseMappings(mappableDatabases, databaseMapping);
+      databaseMapping = createDatabaseMapping(metaStoreMapping);
     }
+
+    mappingsByMetaStoreName.put(metaStoreMapping.getMetastoreMappingName(), databaseMapping);
+    addDatabaseMappings(mappableDatabases, databaseMapping);
   }
 
   private void validatePrimaryMetastoreDatabases(List<String> primaryDatabases) {

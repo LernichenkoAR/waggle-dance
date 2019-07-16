@@ -145,7 +145,7 @@ public class StaticDatabaseMappingServiceTest {
   @Test(expected = WaggleDanceException.class)
   public void validatePrimaryMetaStoreClashThrowsException() throws TException {
     federatedMetastore = newFederatedInstanceWithClient(FEDERATED_NAME, URI, Lists.newArrayList("db"), true);
-
+    primaryMetastore.setMappedDatabases(Lists.newArrayList("db"));
     metaStoreMappingPrimary = mockNewMapping(true, primaryMetastore);
     when(metaStoreMappingPrimary.getClient()).thenReturn(primaryDatabaseClient);
     when(primaryDatabaseClient.get_all_databases()).thenReturn(Lists.newArrayList("db"));
@@ -275,7 +275,7 @@ public class StaticDatabaseMappingServiceTest {
     AbstractMetaStore newPrimary = newPrimaryInstance("primary", "abc");
     MetaStoreMapping unavailablePrimaryMapping = mockNewMapping(false, newPrimary);
     when(metaStoreMappingFactory.newInstance(newPrimary)).thenReturn(unavailablePrimaryMapping);
-    when(unavailablePrimaryMapping.getClient()).thenReturn(primaryDatabaseClient);
+//    when(unavailablePrimaryMapping.getClient()).thenReturn(primaryDatabaseClient);
 
     service.onUpdate(primaryMetastore, newPrimary);
     DatabaseMapping databaseMapping = service.databaseMapping("some_unknown_prefix_db");
