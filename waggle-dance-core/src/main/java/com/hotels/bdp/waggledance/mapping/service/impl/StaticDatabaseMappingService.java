@@ -118,7 +118,8 @@ public class StaticDatabaseMappingService implements MappingEventListener {
     }
 
     if (metaStore.getFederationType() == PRIMARY) {
-      validatePrimaryMetastoreDatabases(mappableDatabases);
+      validateFederatedMetastoreDatabases(mappableDatabases, metaStoreMapping);
+//      validatePrimaryMetastoreDatabases(mappableDatabases);
       primaryDatabaseMapping = createDatabaseMapping(metaStoreMapping);
       primaryDatabasesCache.invalidateAll();
       databaseMapping = primaryDatabaseMapping;
@@ -183,6 +184,7 @@ public class StaticDatabaseMappingService implements MappingEventListener {
 
   private void addDatabaseMappings(List<String> databases, DatabaseMapping databaseMapping) {
     for (String databaseName : databases) {
+      System.out.println("Adding " + databaseName + " to mapping " + databaseMapping.getMetastoreMappingName());
       mappingsByDatabaseName.put(databaseName.toLowerCase(Locale.ROOT), databaseMapping);
     }
   }
@@ -323,16 +325,32 @@ public class StaticDatabaseMappingService implements MappingEventListener {
       @Override
       public List<String> getAllDatabases() {
         List<String> combined = new ArrayList<>();
-        try {
-          List<String> databases = primaryDatabasesCache.get(PRIMARY_KEY);
-          for (String database : databases) {
-            combined.add(primaryDatabaseMapping.transformOutboundDatabaseName(database));
-          }
+//        try {
+//          List<String> databases = primaryDatabasesCache.get(PRIMARY_KEY);
+//
+//          for (String database : databases) {
+//            combined.add(primaryDatabaseMapping.transformOutboundDatabaseName(database));
+//          }
           combined.addAll(mappingsByDatabaseName.keySet());
-        } catch (ExecutionException e) {
-          LOG.warn("Can't fetch databases: {}", e.getCause().getMessage());
-        }
+//        } catch (ExecutionException e) {
+//          LOG.warn("Can't fetch databases: {}", e.getCause().getMessage());
+//        }
         return combined;
+
+//        List<DatabaseMapping> databaseMappings = getDatabaseMappings();
+//        List<GetAllDatabasesRequest> allRequests = new ArrayList<>();
+//
+//        BiFunction<List<String>, DatabaseMapping, List<String>> filter = (
+//            databases,
+//            mapping) -> getMappedWhitelistedDatabases(databases, mapping);
+//
+//        for (DatabaseMapping mapping : databaseMappings) {
+//          GetAllDatabasesRequest allDatabasesRequest = new GetAllDatabasesRequest(mapping, filter);
+//          allRequests.add(allDatabasesRequest);
+//        }
+//        List<String> result = getPanopticOperationExecutor()
+//            .executeRequests(allRequests, GET_DATABASES_TIMEOUT, "Can't fetch databases: {}");
+//        return result;
       }
 
       @Override
