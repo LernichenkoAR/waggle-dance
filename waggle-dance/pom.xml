@@ -1,0 +1,55 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.hotels</groupId>
+    <artifactId>waggle-dance-parent</artifactId>
+    <version>3.3.3-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>waggle-dance</artifactId>
+  <description>Waggle Dance binaries</description>
+  <packaging>pom</packaging>
+
+  <properties>
+    <maven-assembly-plugin.version>3.1.0</maven-assembly-plugin.version>
+    <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
+    <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
+    <artifact.location>${project.build.directory}/waggle-dance-${project.version}-bin.tgz</artifact.location>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.hotels</groupId>
+      <artifactId>waggle-dance-boot</artifactId>
+      <version>${project.version}</version>
+      <classifier>exec</classifier>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>waggle-dance-${project.version}</finalName>
+    <plugins>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>${maven-assembly-plugin.version}</version>
+        <configuration>
+          <tarLongFileMode>posix</tarLongFileMode>
+          <descriptors>
+            <descriptor>src/main/assembly/waggle-dance-package.xml</descriptor>
+          </descriptors>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
