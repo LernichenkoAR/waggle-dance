@@ -36,7 +36,7 @@ public class ThriftMetastoreClientManagerIntegrationTest {
 
   private final HiveCompatibleThriftHiveMetastoreIfaceFactory hiveCompatibleThriftHiveMetastoreIfaceFactory = new HiveCompatibleThriftHiveMetastoreIfaceFactory();
   private final HiveConf hiveConf = new HiveConf();
-  private final int connectionTimeout = 10;
+  private final int connectionTimeout = 600;
 
   public @Rule ThriftHiveMetaStoreJUnitRule hive = new ThriftHiveMetaStoreJUnitRule("dbname");
   private ThriftMetastoreClientManager manager;
