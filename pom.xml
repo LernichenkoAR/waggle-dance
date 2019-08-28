@@ -29,7 +29,7 @@
     <module>waggle-dance-boot</module>
     <module>waggle-dance-integration-tests</module>
     <module>waggle-dance</module>
-    <module>waggle-dance-rpm</module>
+    <!--<module>waggle-dance-rpm</module>-->
   </modules>
 
   <properties>

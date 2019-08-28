@@ -44,6 +44,9 @@ public class PanopticConcurrentOperationExecutor implements PanopticOperationExe
       List<? extends RequestCallable<List<T>>> allRequests,
       long requestTimeout,
       String errorMessage) {
+    if (allRequests.size() == 0) {
+      return new ArrayList<>();
+    }
     ExecutorService executorService = Executors.newFixedThreadPool(allRequests.size());
     try {
       List<T> allResults = new ArrayList<>();
