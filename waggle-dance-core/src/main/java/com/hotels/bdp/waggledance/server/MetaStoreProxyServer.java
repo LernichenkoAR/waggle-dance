@@ -167,7 +167,7 @@ public class MetaStoreProxyServer implements ApplicationRunner {
         serverSocket = new TServerSocketKeepAlive(serverSocket);
       }
 
-      TTransportFactory transFactory = getTTransportFactory(useFramedTransport, useSASL);// useFramedTransport ? new TFramedTransport.Factory() : new TTransportFactory();
+      TTransportFactory transFactory = createTTransportFactory(useFramedTransport, useSASL);
       TProcessorFactory tProcessorFactory = getTProcessorFactory(useSASL);
       LOG.info("Starting WaggleDance Server");
 
@@ -200,13 +200,13 @@ public class MetaStoreProxyServer implements ApplicationRunner {
 
   private TProcessorFactory getTProcessorFactory(boolean useSASL) throws TTransportException {
     if (useSASL) {
-      return new TProcessorFactorySaslDecorator(this.tProcessorFactory, hiveConf);
+      return new TProcessorFactorySaslDecorator(tProcessorFactory, hiveConf);
     } else {
-      return this.tProcessorFactory;
+      return tProcessorFactory;
     }
   }
 
-  private TTransportFactory getTTransportFactory(boolean useFramedTransport, boolean useSASL)
+  private TTransportFactory createTTransportFactory(boolean useFramedTransport, boolean useSASL)
           throws TTransportException, LoginException {
     TTransportFactory transFactory;
     if (useFramedTransport) {
