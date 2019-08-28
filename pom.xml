@@ -15,12 +15,7 @@
   <url>https://github.com/HotelsDotCom/waggle-dance</url>
   <inceptionYear>2016</inceptionYear>
 
-  <scm>
-    <connection>scm:git:https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/HotelsDotCom/waggle-dance.git</connection>
-    <developerConnection>scm:git:https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/HotelsDotCom/waggle-dance.git</developerConnection>
-    <url>https://github.com/HotelsDotCom/waggle-dance</url>
-    <tag>HEAD</tag>
-  </scm>
+
 
   <modules>
     <module>waggle-dance-core</module>
