@@ -141,7 +141,7 @@ class ThriftMetastoreClientManager implements Closeable {
                 String principalConfig = conf.getVar(ConfVars.METASTORE_KERBEROS_PRINCIPAL);
                 transport = KerberosSaslHelper
                     .getKerberosTransport(principalConfig, store.getHost(), transport,
-                        MetaStoreUtils.getMetaStoreSaslProperties(conf), false);
+                        MetaStoreUtils.getMetaStoreSaslProperties(conf), true);
               }
             } catch (IOException ioe) {
               LOG.error("Couldn't create client transport", ioe);
