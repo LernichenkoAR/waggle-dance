@@ -23,7 +23,7 @@
   <Loggers>
     <Logger name="com.hotels.bdp.waggledance" level="debug"/>
     <Logger name="com.hotels.bdp.waggledance.server.invocation-log" level="info"/>
-    <Root level="info">
+    <Root level="debug">
       <AppenderRef ref="STDOUT"/>
     </Root>
   </Loggers>
