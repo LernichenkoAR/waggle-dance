@@ -54,15 +54,13 @@ class ThriftMetastoreClientManager implements Closeable {
   private final HiveConf conf;
   private final HiveCompatibleThriftHiveMetastoreIfaceFactory hiveCompatibleThriftHiveMetastoreIfaceFactory;
   private final URI[] metastoreUris;
+  private final int connectionTimeout;
   private ThriftHiveMetastore.Iface client = null;
   private TTransport transport = null;
   private boolean isConnected = false;
-  private String tokenStrForm;
   // for thrift connects
   private int retries = 5;
   private long retryDelaySeconds = 0;
-
-  private final int connectionTimeout;
 
   ThriftMetastoreClientManager(
       HiveConf conf,
@@ -125,7 +123,6 @@ class ThriftMetastoreClientManager implements Closeable {
           if (useSasl) {
             // Wrap thrift connection with SASL for secure connection.
             try {
-//              HadoopThriftAuthBridge.Client authBridge = ShimLoader.getHadoopThriftAuthBridge().createClient();
               UserGroupInformation.setConfiguration(conf);
 
               // check if we should use delegation tokens to authenticate
@@ -135,14 +132,15 @@ class ThriftMetastoreClientManager implements Closeable {
               // submission.
               String tokenSig = conf.getVar(ConfVars.METASTORE_TOKEN_SIGNATURE);
               // tokenSig could be null
-              tokenStrForm = Utils.getTokenStrForm(tokenSig);
+              String tokenStrForm = Utils.getTokenStrForm(tokenSig);
               if (tokenStrForm != null) {
-                // authenticate using delegation tokens via the "DIGEST" mechanism
-                transport = KerberosSaslHelper.getTokenTransport(tokenStrForm, store.getHost(), transport,
+                transport = KerberosSaslHelper
+                    .getTokenTransport(tokenStrForm, store.getHost(), transport,
                         MetaStoreUtils.getMetaStoreSaslProperties(conf));
               } else {
-                String principalConfig = conf.getVar(HiveConf.ConfVars.METASTORE_KERBEROS_PRINCIPAL);
-                transport = KerberosSaslHelper.getKerberosTransport(principalConfig, store.getHost(), transport,
+                String principalConfig = conf.getVar(ConfVars.METASTORE_KERBEROS_PRINCIPAL);
+                transport = KerberosSaslHelper
+                    .getKerberosTransport(principalConfig, store.getHost(), transport,
                         MetaStoreUtils.getMetaStoreSaslProperties(conf), false);
               }
             } catch (IOException ioe) {

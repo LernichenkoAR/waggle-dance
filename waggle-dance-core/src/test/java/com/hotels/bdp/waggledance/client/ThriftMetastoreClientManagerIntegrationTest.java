@@ -36,9 +36,10 @@ public class ThriftMetastoreClientManagerIntegrationTest {
 
   private final HiveCompatibleThriftHiveMetastoreIfaceFactory hiveCompatibleThriftHiveMetastoreIfaceFactory = new HiveCompatibleThriftHiveMetastoreIfaceFactory();
   private final HiveConf hiveConf = new HiveConf();
+  private final String databaseName = "dbname";
   private final int connectionTimeout = 600;
 
-  public @Rule ThriftHiveMetaStoreJUnitRule hive = new ThriftHiveMetaStoreJUnitRule("dbname");
+  public @Rule ThriftHiveMetaStoreJUnitRule hive = new ThriftHiveMetaStoreJUnitRule(databaseName);
   private ThriftMetastoreClientManager manager;
 
   @Before
@@ -51,16 +52,14 @@ public class ThriftMetastoreClientManagerIntegrationTest {
   @Test
   public void open() throws Exception {
     manager.open();
-
-    Database database = manager.getClient().get_database("dbname");
+    Database database = manager.getClient().get_database(databaseName);
     assertNotNull(database);
   }
 
   @Test
   public void reconnect() throws Exception {
     manager.reconnect();
-
-    Database database = manager.getClient().get_database("dbname");
+    Database database = manager.getClient().get_database(databaseName);
     assertNotNull(database);
   }
 
