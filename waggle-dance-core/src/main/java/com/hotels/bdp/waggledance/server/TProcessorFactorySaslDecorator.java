@@ -43,7 +43,7 @@ public class TProcessorFactorySaslDecorator extends TProcessorFactory {
   public TProcessor getProcessor(TTransport transport) {
     try {
       TProcessor tProcessor = tProcessorFactory.getProcessor(transport);
-      return saslServer.wrapProcessor(tProcessor);
+      return saslServer.wrapNonAssumingProcessor(tProcessor);
     } catch (RuntimeException e) {
       throw new RuntimeException("Error creating SASL wrapped TProcessor", e);
     }
