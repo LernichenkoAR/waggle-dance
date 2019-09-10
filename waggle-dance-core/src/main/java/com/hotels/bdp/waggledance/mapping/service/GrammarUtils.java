@@ -28,7 +28,7 @@ import com.google.common.base.Splitter;
 
 public final class GrammarUtils {
 
-  private static final String OR_SEPARATOR = "|";
+  private static final String OR_SEPARATOR = ".";
   private static final Splitter OR_SPLITTER = Splitter.on(OR_SEPARATOR);
   private static final Joiner OR_JOINER = Joiner.on(OR_SEPARATOR);
 
