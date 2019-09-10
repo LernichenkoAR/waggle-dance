@@ -28,7 +28,7 @@ import com.google.common.base.Splitter;
 
 public final class GrammarUtils {
 
-  private static final String OR_SEPARATOR = ".";
+  private static final String OR_SEPARATOR = "|";
   private static final Splitter OR_SPLITTER = Splitter.on(OR_SEPARATOR);
   private static final Joiner OR_JOINER = Joiner.on(OR_SEPARATOR);
 
@@ -36,7 +36,8 @@ public final class GrammarUtils {
 
   @VisibleForTesting
   static String[] splitPattern(String prefix, String pattern) {
-    if (pattern.startsWith(prefix)) {
+    String prefixCanonized = toCanon(prefix);
+    if (pattern.startsWith(prefix) || pattern.startsWith(prefixCanonized)) {
       return new String[] { prefix, pattern.substring(prefix.length()) };
     }
 
@@ -45,7 +46,7 @@ public final class GrammarUtils {
     int index = pattern.length();
     while (index >= 0) {
       String subPatternRegex = subPattern.replaceAll("\\*", ".*");
-      if (prefix.matches(subPatternRegex)) {
+      if (prefix.matches(subPatternRegex) || prefixCanonized.matches(subPatternRegex)) {
         return new String[] { subPattern, pattern.substring(subPattern.length() - 1) };
       }
       // Skip last * and find the next sub-pattern
@@ -58,6 +59,10 @@ public final class GrammarUtils {
       }
     }
     return new String[] {};
+  }
+
+  private static String toCanon(String prefix) {
+    return prefix.replace("_",".");
   }
 
   /**
