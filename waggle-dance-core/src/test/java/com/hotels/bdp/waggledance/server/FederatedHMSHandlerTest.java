@@ -1615,16 +1615,16 @@ public class FederatedHMSHandlerTest {
 
   @Test
   public void alter_table_with_cascade() throws TException {
-    String prefixDB = "wd_"+DB_P;
     Table table = new Table();
-    table.setDbName(prefixDB);
-    Table tableTransformed = new Table();
     table.setDbName(DB_P);
-    when(primaryMapping.transformInboundDatabaseName(prefixDB)).thenReturn(DB_P);
+    Table tableTransformed = new Table();
+    String alternativeDB = "wd";
+    tableTransformed.setDbName(alternativeDB);
+    when(primaryMapping.transformInboundDatabaseName(DB_P)).thenReturn(alternativeDB);
     when(primaryMapping.transformInboundTable(table)).thenReturn(tableTransformed);
     handler.alter_table_with_cascade(DB_P, "table", table, true);
     verify(primaryMapping, times(2)).checkWritePermissions(DB_P);
-    verify(primaryClient).alter_table_with_cascade(DB_P, "table", tableTransformed, true);
+    verify(primaryClient).alter_table_with_cascade(alternativeDB, "table", tableTransformed, true);
   }
 
   @Test
