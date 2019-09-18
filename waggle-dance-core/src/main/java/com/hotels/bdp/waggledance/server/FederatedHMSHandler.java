@@ -1431,6 +1431,7 @@ class FederatedHMSHandler extends FacebookBase implements CloseableIHMSHandler {
   public void alter_table_with_cascade(String dbname, String tbl_name, Table new_tbl, boolean cascade)
       throws InvalidOperationException, MetaException, TException {
     DatabaseMapping mapping = checkWritePermissions(dbname);
+    new_tbl.setDbName(mapping.transformInboundDatabaseName(dbname));
     mapping
         .getClient()
         .alter_table_with_cascade(mapping.transformInboundDatabaseName(dbname), tbl_name, new_tbl, cascade);
