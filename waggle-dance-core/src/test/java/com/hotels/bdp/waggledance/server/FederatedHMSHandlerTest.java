@@ -128,6 +128,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.facebook.fb303.fb_status;
@@ -137,6 +138,7 @@ import com.hotels.bdp.waggledance.mapping.model.DatabaseMapping;
 import com.hotels.bdp.waggledance.mapping.service.MappingEventListener;
 import com.hotels.bdp.waggledance.mapping.service.PanopticOperationHandler;
 import com.hotels.bdp.waggledance.mapping.service.impl.NotifyingFederationService;
+import org.mockito.stubbing.Answer;
 
 @RunWith(MockitoJUnitRunner.class)
 public class FederatedHMSHandlerTest {
@@ -1614,9 +1616,15 @@ public class FederatedHMSHandlerTest {
   @Test
   public void alter_table_with_cascade() throws TException {
     Table table = new Table();
+    table.setDbName(DB_P);
+    Table tableTransformed = new Table();
+    String alternativeDB = "wd";
+    tableTransformed.setDbName(alternativeDB);
+    when(primaryMapping.transformInboundDatabaseName(DB_P)).thenReturn(alternativeDB);
+    when(primaryMapping.transformInboundTable(table)).thenReturn(tableTransformed);
     handler.alter_table_with_cascade(DB_P, "table", table, true);
-    verify(primaryMapping).checkWritePermissions(DB_P);
-    verify(primaryClient).alter_table_with_cascade(DB_P, "table", table, true);
+    verify(primaryMapping, times(2)).checkWritePermissions(DB_P);
+    verify(primaryClient).alter_table_with_cascade(alternativeDB, "table", tableTransformed, true);
   }
 
   @Test
