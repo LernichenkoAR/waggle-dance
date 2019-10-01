@@ -230,6 +230,19 @@
         </plugin>
       </plugins>
     </pluginManagement>
+
+
+    <plugins>
+      <plugin>
+        <groupId>com.mycila</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>${license.maven.plugin.version}</version>
+        <configuration>
+          <headerDefinitions>target/plugin-config/mycila/hotels-definitions.xml</headerDefinitions>
+          <header>target/plugin-config/mycila/APACHE-2.txt</header>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
 
 </project>
