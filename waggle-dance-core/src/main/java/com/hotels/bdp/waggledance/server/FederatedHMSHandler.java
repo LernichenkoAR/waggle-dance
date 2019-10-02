@@ -15,6 +15,8 @@
  */
 package com.hotels.bdp.waggledance.server;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -1243,8 +1245,13 @@ class FederatedHMSHandler extends FacebookBase implements CloseableIHMSHandler {
     String token = getPrimaryClient().get_delegation_token(token_owner, renewer_kerberos_principal_name);
     try {
       Token<DelegationTokenIdentifier> dt = new Token<>();
+      DelegationTokenIdentifier identifier = new DelegationTokenIdentifier();
       dt.decodeFromUrlString(token);
-      delegationTokenSecretManager.addPersistedDelegationToken(dt.decodeIdentifier(), System.currentTimeMillis());
+      ByteArrayInputStream buf = new ByteArrayInputStream(dt.getIdentifier());
+      DataInputStream in = new DataInputStream(buf);
+      identifier.readFields(in);
+      in.close();
+      delegationTokenSecretManager.addPersistedDelegationToken(identifier, System.currentTimeMillis());
     } catch (IOException e) {
       e.printStackTrace();
     }
