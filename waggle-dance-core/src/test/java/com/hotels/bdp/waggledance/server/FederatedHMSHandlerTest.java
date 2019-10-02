@@ -121,14 +121,13 @@ import org.apache.hadoop.hive.metastore.api.TableStatsResult;
 import org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface;
 import org.apache.hadoop.hive.metastore.api.Type;
 import org.apache.hadoop.hive.metastore.api.UnlockRequest;
+import org.apache.hadoop.hive.thrift.DelegationTokenSecretManager;
 import org.apache.thrift.TException;
-import org.iq80.leveldb.DB;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.facebook.fb303.fb_status;
@@ -138,7 +137,6 @@ import com.hotels.bdp.waggledance.mapping.model.DatabaseMapping;
 import com.hotels.bdp.waggledance.mapping.service.MappingEventListener;
 import com.hotels.bdp.waggledance.mapping.service.PanopticOperationHandler;
 import com.hotels.bdp.waggledance.mapping.service.impl.NotifyingFederationService;
-import org.mockito.stubbing.Answer;
 
 @RunWith(MockitoJUnitRunner.class)
 public class FederatedHMSHandlerTest {
@@ -150,12 +148,12 @@ public class FederatedHMSHandlerTest {
   private @Mock NotifyingFederationService notifyingFederationService;
   private @Mock DatabaseMapping primaryMapping;
   private @Mock Iface primaryClient;
-
+  private @Mock DelegationTokenSecretManager delegationTokenSecretManager;
   private FederatedHMSHandler handler;
 
   @Before
   public void setUp() throws NoSuchObjectException {
-    handler = new FederatedHMSHandler(databaseMappingService, notifyingFederationService);
+    handler = new FederatedHMSHandler(databaseMappingService, notifyingFederationService, delegationTokenSecretManager);
     when(databaseMappingService.primaryDatabaseMapping()).thenReturn(primaryMapping);
     when(databaseMappingService.getDatabaseMappings()).thenReturn(Collections.singletonList(primaryMapping));
     when(primaryMapping.getClient()).thenReturn(primaryClient);
@@ -1396,6 +1394,7 @@ public class FederatedHMSHandlerTest {
   public void get_delegation_token() throws TException {
     String expected = "expected";
     when(primaryClient.get_delegation_token("owner", "kerberos_principal")).thenReturn(expected);
+
     String result = handler.get_delegation_token("owner", "kerberos_principal");
     assertThat(result, is(expected));
   }

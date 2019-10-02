@@ -42,6 +42,7 @@ import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.metastore.TServerSocketKeepAlive;
 import org.apache.hadoop.hive.shims.ShimLoader;
+import org.apache.hadoop.hive.thrift.DelegationTokenSecretManager;
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.StringUtils;
@@ -84,15 +85,16 @@ public class MetaStoreProxyServer implements ApplicationRunner {
   private final Lock startLock;
   private final Condition startCondition;
   private TServer tServer;
-
+  private final DelegationTokenSecretManager delegationTokenSecretManager;
   @Autowired
   public MetaStoreProxyServer(
-      HiveConf hiveConf,
-      WaggleDanceConfiguration waggleDanceConfiguration,
-      TProcessorFactory tProcessorFactory) {
+          HiveConf hiveConf,
+          WaggleDanceConfiguration waggleDanceConfiguration,
+          TProcessorFactory tProcessorFactory, DelegationTokenSecretManager delegationTokenSecretManager) {
     this.hiveConf = hiveConf;
     this.waggleDanceConfiguration = waggleDanceConfiguration;
     this.tProcessorFactory = tProcessorFactory;
+    this.delegationTokenSecretManager = delegationTokenSecretManager;
     startLock = new ReentrantLock();
     startCondition = startLock.newCondition();
   }
@@ -200,7 +202,7 @@ public class MetaStoreProxyServer implements ApplicationRunner {
 
   private TProcessorFactory getTProcessorFactory(boolean useSASL) throws TTransportException {
     if (useSASL) {
-      return new TProcessorFactorySaslDecorator(tProcessorFactory, hiveConf);
+      return new TProcessorFactorySaslDecorator(tProcessorFactory, hiveConf, delegationTokenSecretManager);
     } else {
       return tProcessorFactory;
     }

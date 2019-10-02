@@ -16,6 +16,7 @@
 package com.hotels.bdp.waggledance.server;
 
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.thrift.DelegationTokenSecretManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -38,26 +39,28 @@ public class FederatedHMSHandlerFactory {
   private final MetaStoreMappingFactory metaStoreMappingFactory;
   private final WaggleDanceConfiguration waggleDanceConfiguration;
   private final QueryMapping queryMapping;
+  private final DelegationTokenSecretManager delegationTokenSecretManager;
 
   @Autowired
   public FederatedHMSHandlerFactory(
-      HiveConf hiveConf,
-      NotifyingFederationService notifyingFederationService,
-      MetaStoreMappingFactory metaStoreMappingFactory,
-      WaggleDanceConfiguration waggleDanceConfiguration,
-      QueryMapping queryMapping) {
+          HiveConf hiveConf,
+          NotifyingFederationService notifyingFederationService,
+          MetaStoreMappingFactory metaStoreMappingFactory,
+          WaggleDanceConfiguration waggleDanceConfiguration,
+          QueryMapping queryMapping, DelegationTokenSecretManager delegationTokenSecretManager) {
     this.hiveConf = hiveConf;
     this.notifyingFederationService = notifyingFederationService;
     this.metaStoreMappingFactory = metaStoreMappingFactory;
     this.waggleDanceConfiguration = waggleDanceConfiguration;
     this.queryMapping = queryMapping;
+    this.delegationTokenSecretManager = delegationTokenSecretManager;
   }
 
   public CloseableIHMSHandler create() {
     MappingEventListener service = createDatabaseMappingService();
     MonitoredDatabaseMappingService monitoredService = new MonitoredDatabaseMappingService(service);
 
-    CloseableIHMSHandler baseHandler = new FederatedHMSHandler(monitoredService, notifyingFederationService);
+    CloseableIHMSHandler baseHandler = new FederatedHMSHandler(monitoredService, notifyingFederationService, delegationTokenSecretManager);
     HiveConf conf = new HiveConf(hiveConf);
     baseHandler.setConf(conf);
     return baseHandler;

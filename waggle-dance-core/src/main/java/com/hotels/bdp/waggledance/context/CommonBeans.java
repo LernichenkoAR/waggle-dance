@@ -15,10 +15,15 @@
  */
 package com.hotels.bdp.waggledance.context;
 
+import java.io.IOException;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.thrift.DelegationTokenSecretManager;
+import org.apache.hadoop.hive.thrift.DelegationTokenStore;
+import org.apache.hadoop.hive.thrift.MemoryTokenStore;
+import org.apache.hadoop.hive.thrift.TokenStoreDelegationTokenSecretManager;
 import org.springframework.context.annotation.Bean;
 
 import com.hotels.bdp.waggledance.client.CloseableThriftHiveMetastoreIfaceClientFactory;
@@ -69,6 +74,20 @@ public class CommonBeans {
   public PollingFederationService pollingFederationService(
       PopulateStatusFederationService populateStatusFederationService) {
     return new PollingFederationService(populateStatusFederationService);
+  }
+
+  @Bean
+  public DelegationTokenSecretManager delegationTokenSecretManager(HiveConf hiveConf) throws IOException {
+    long secretKeyInterval = hiveConf.getLong("hive.cluster.delegation.key.update-interval", 86400000L);
+    long tokenMaxLifetime = hiveConf.getLong("hive.cluster.delegation.token.max-lifetime", 604800000L);
+    long tokenRenewInterval = hiveConf.getLong("hive.cluster.delegation.token.renew-interval", 86400000L);
+    long tokenGcInterval = hiveConf.getLong("hive.cluster.delegation.token.gc-interval", 3600000L);
+//    DelegationTokenStore dts = new MemoryTokenStore();
+//    dts.setConf(hiveConf);
+    DelegationTokenSecretManager dtsm =  new DelegationTokenSecretManager(
+            secretKeyInterval, tokenMaxLifetime, tokenRenewInterval, tokenGcInterval);
+    dtsm.startThreads();
+    return dtsm;
   }
 
 }

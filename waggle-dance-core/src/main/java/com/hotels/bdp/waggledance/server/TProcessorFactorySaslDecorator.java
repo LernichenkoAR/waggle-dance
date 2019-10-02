@@ -17,6 +17,7 @@ package com.hotels.bdp.waggledance.server;
 
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.shims.ShimLoader;
+import org.apache.hadoop.hive.thrift.DelegationTokenSecretManager;
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.thrift.TProcessor;
@@ -29,7 +30,8 @@ public class TProcessorFactorySaslDecorator extends TProcessorFactory {
   private final HadoopThriftAuthBridge.Server saslServer;
   private final TProcessorFactory tProcessorFactory;
 
-  TProcessorFactorySaslDecorator(TProcessorFactory tProcessorFactory, HiveConf hiveConf) throws TTransportException {
+
+  TProcessorFactorySaslDecorator(TProcessorFactory tProcessorFactory, HiveConf hiveConf, DelegationTokenSecretManager delegationTokenSecretManager) throws TTransportException {
     super(null);
     this.tProcessorFactory = tProcessorFactory;
     UserGroupInformation.setConfiguration(hiveConf);
@@ -37,6 +39,7 @@ public class TProcessorFactorySaslDecorator extends TProcessorFactory {
     saslServer = hadoopThriftAuthBridge
         .createServer(hiveConf.getVar(HiveConf.ConfVars.METASTORE_KERBEROS_KEYTAB_FILE),
             hiveConf.getVar(HiveConf.ConfVars.METASTORE_KERBEROS_PRINCIPAL));
+    saslServer.setSecretManager(delegationTokenSecretManager);
   }
 
   @Override
