@@ -36,6 +36,7 @@ import com.hotels.bdp.waggledance.mapping.model.QueryMapping;
 import com.hotels.bdp.waggledance.mapping.service.PrefixNamingStrategy;
 import com.hotels.bdp.waggledance.mapping.service.impl.LowerCasePrefixNamingStrategy;
 import com.hotels.bdp.waggledance.mapping.service.impl.PollingFederationService;
+import org.springframework.context.annotation.Scope;
 
 @org.springframework.context.annotation.Configuration
 public class CommonBeans {
@@ -77,6 +78,7 @@ public class CommonBeans {
   }
 
   @Bean
+  @Scope("singleton")
   public DelegationTokenSecretManager delegationTokenSecretManager(HiveConf hiveConf) throws IOException {
     long secretKeyInterval = hiveConf.getLong("hive.cluster.delegation.key.update-interval", 86400000L);
     long tokenMaxLifetime = hiveConf.getLong("hive.cluster.delegation.token.max-lifetime", 604800000L);

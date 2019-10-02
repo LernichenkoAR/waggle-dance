@@ -1251,6 +1251,9 @@ class FederatedHMSHandler extends FacebookBase implements CloseableIHMSHandler {
       DataInputStream in = new DataInputStream(buf);
       identifier.readFields(in);
       in.close();
+      if (!delegationTokenSecretManager.isRunning()){
+        delegationTokenSecretManager.startThreads();
+      }
       delegationTokenSecretManager.addPersistedDelegationToken(identifier, System.currentTimeMillis());
     } catch (IOException e) {
       e.printStackTrace();
