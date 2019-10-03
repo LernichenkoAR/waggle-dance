@@ -1251,13 +1251,13 @@ class FederatedHMSHandler extends FacebookBase implements CloseableIHMSHandler {
       DataInputStream in = new DataInputStream(buf);
       identifier.readFields(in);
       in.close();
-//      if (delegationTokenSecretManager.isRunning()){
-//        //delegationTokenSecretManager.stopThreads();
+      if (delegationTokenSecretManager.isRunning()){
+        delegationTokenSecretManager.stopThreads();
 ////        delegationTokenSecretManager.renewDelegationToken(token);
-//      }
+      }
         long tokenRenewInterval = conf.getLong("hive.cluster.delegation.token.renew-interval", 86400000L);
       delegationTokenSecretManager.addPersistedDelegationToken(identifier, System.currentTimeMillis() + tokenRenewInterval);
-      //delegationTokenSecretManager.startThreads();
+      delegationTokenSecretManager.startThreads();
 
     } catch (IOException e) {
       e.printStackTrace();

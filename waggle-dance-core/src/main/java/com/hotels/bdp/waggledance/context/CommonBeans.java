@@ -88,7 +88,7 @@ public class CommonBeans {
 //    dts.setConf(hiveConf);
     DelegationTokenSecretManager dtsm =  new DelegationTokenSecretManager(
             secretKeyInterval, tokenMaxLifetime, tokenRenewInterval, tokenGcInterval);
-   // dtsm.startThreads();
+    dtsm.startThreads();
     return dtsm;
   }
 
