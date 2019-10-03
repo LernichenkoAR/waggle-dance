@@ -40,6 +40,7 @@ import javax.security.auth.login.LoginException;
 import org.apache.hadoop.hive.common.auth.HiveAuthUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
+import org.apache.hadoop.hive.metastore.MetaStoreUtils;
 import org.apache.hadoop.hive.metastore.TServerSocketKeepAlive;
 import org.apache.hadoop.hive.shims.ShimLoader;
 import org.apache.hadoop.hive.thrift.DelegationTokenSecretManager;
@@ -218,7 +219,12 @@ public class MetaStoreProxyServer implements ApplicationRunner {
     }
     if (useSASL) {
       UserGroupInformation.setConfiguration(hiveConf);
-      transFactory = new HiveAuthFactory(hiveConf).getAuthTransFactory();
+      HadoopThriftAuthBridge bridge = ShimLoader.getHadoopThriftAuthBridge();
+      HadoopThriftAuthBridge.Server saslServer = bridge
+              .createServer(hiveConf.getVar(HiveConf.ConfVars.METASTORE_KERBEROS_KEYTAB_FILE),
+                      hiveConf.getVar(HiveConf.ConfVars.METASTORE_KERBEROS_PRINCIPAL));
+      saslServer.setSecretManager(delegationTokenSecretManager);
+      transFactory = saslServer.createTransportFactory(MetaStoreUtils.getMetaStoreSaslProperties(hiveConf));
     }
     return transFactory;
   }
