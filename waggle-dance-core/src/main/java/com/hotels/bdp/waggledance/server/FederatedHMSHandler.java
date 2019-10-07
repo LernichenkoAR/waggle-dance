@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.api.AbortTxnRequest;
 import org.apache.hadoop.hive.metastore.api.AbortTxnsRequest;
@@ -132,6 +133,7 @@ import org.apache.hadoop.hive.metastore.api.UnlockRequest;
 import org.apache.hadoop.hive.thrift.DelegationTokenIdentifier;
 import org.apache.hadoop.hive.thrift.DelegationTokenSecretManager;
 import org.apache.hadoop.security.token.Token;
+import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenSecretManager;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1251,15 +1253,20 @@ class FederatedHMSHandler extends FacebookBase implements CloseableIHMSHandler {
       DataInputStream in = new DataInputStream(buf);
       identifier.readFields(in);
       in.close();
-      if (delegationTokenSecretManager.isRunning()){
-        delegationTokenSecretManager.stopThreads();
+    //  if (delegationTokenSecretManager.isRunning()){
+    //    delegationTokenSecretManager.stopThreads();
 ////        delegationTokenSecretManager.renewDelegationToken(token);
-      }
+   //   }
         long tokenRenewInterval = conf.getLong("hive.cluster.delegation.token.renew-interval", 86400000L);
-      delegationTokenSecretManager.addPersistedDelegationToken(identifier, System.currentTimeMillis() + tokenRenewInterval);
-      delegationTokenSecretManager.startThreads();
+        @SuppressWarnings("unchecked")
+      Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> tokens=
+                (Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> ) FieldUtils.readDeclaredField(delegationTokenSecretManager, "currentTokens", true );
+      tokens.put(identifier, new AbstractDelegationTokenSecretManager.DelegationTokenInformation(System.currentTimeMillis() + tokenRenewInterval, dt.getPassword()));
 
-    } catch (IOException e) {
+     // delegationTokenSecretManager.addPersistedDelegationToken(identifier, System.currentTimeMillis() + tokenRenewInterval);
+    //  delegationTokenSecretManager.startThreads();
+
+    } catch (IOException | IllegalAccessException e) {
       e.printStackTrace();
     }
     return token;
