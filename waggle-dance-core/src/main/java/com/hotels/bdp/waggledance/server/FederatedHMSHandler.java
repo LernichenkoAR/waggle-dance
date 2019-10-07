@@ -1260,7 +1260,8 @@ class FederatedHMSHandler extends FacebookBase implements CloseableIHMSHandler {
         long tokenRenewInterval = conf.getLong("hive.cluster.delegation.token.renew-interval", 86400000L);
         @SuppressWarnings("unchecked")
       Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> tokens=
-                (Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> ) FieldUtils.readDeclaredField(delegationTokenSecretManager, "currentTokens", true );
+                (Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> )
+                        FieldUtils.readField(delegationTokenSecretManager, "currentTokens", true );
       tokens.put(identifier, new AbstractDelegationTokenSecretManager.DelegationTokenInformation(System.currentTimeMillis() + tokenRenewInterval, dt.getPassword()));
 
      // delegationTokenSecretManager.addPersistedDelegationToken(identifier, System.currentTimeMillis() + tokenRenewInterval);
