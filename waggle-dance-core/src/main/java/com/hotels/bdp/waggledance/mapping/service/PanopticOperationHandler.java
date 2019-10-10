@@ -41,7 +41,7 @@ public abstract class PanopticOperationHandler {
 
   protected static final long GET_DATABASES_TIMEOUT = TimeUnit.MILLISECONDS.toMillis(8000L);
   private static final long SET_UGI_TIMEOUT = TimeUnit.MILLISECONDS.toMillis(8000L);
-  private static final long GET_TABLE_META_TIMEOUT = TimeUnit.MILLISECONDS.toMillis(400L);
+  private static final long GET_TABLE_META_TIMEOUT = TimeUnit.MILLISECONDS.toMillis(8000L);
   private static final long GET_ALL_FUNCTIONS_TIMEOUT = TimeUnit.SECONDS.toMillis(1L);
 
   protected abstract PanopticOperationExecutor getPanopticOperationExecutor();
