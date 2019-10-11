@@ -1246,37 +1246,62 @@ class FederatedHMSHandler extends FacebookBase implements CloseableIHMSHandler {
       throws MetaException, TException {
     String token = getPrimaryClient().get_delegation_token(token_owner, renewer_kerberos_principal_name);
     try {
-      Token<DelegationTokenIdentifier> dt = new Token<>();
-      DelegationTokenIdentifier identifier = new DelegationTokenIdentifier();
-      dt.decodeFromUrlString(token);
-      ByteArrayInputStream buf = new ByteArrayInputStream(dt.getIdentifier());
-      DataInputStream in = new DataInputStream(buf);
-      identifier.readFields(in);
-      in.close();
-    //  if (delegationTokenSecretManager.isRunning()){
-    //    delegationTokenSecretManager.stopThreads();
-////        delegationTokenSecretManager.renewDelegationToken(token);
-   //   }
-        long tokenRenewInterval = conf.getLong("hive.cluster.delegation.token.renew-interval", 86400000L);
-        @SuppressWarnings("unchecked")
-      Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> tokens=
-                (Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> )
-                        FieldUtils.readField(delegationTokenSecretManager, "currentTokens", true );
-      tokens.put(identifier, new AbstractDelegationTokenSecretManager.DelegationTokenInformation(System.currentTimeMillis() + tokenRenewInterval, dt.getPassword()));
-
-     // delegationTokenSecretManager.addPersistedDelegationToken(identifier, System.currentTimeMillis() + tokenRenewInterval);
-    //  delegationTokenSecretManager.startThreads();
-
+      Token<DelegationTokenIdentifier> dt = extractDelegationToken(token);
+      DelegationTokenIdentifier identifier = extractDelegationTokenIdentifier(dt);
+      storeToken(dt, identifier);
     } catch (IOException | IllegalAccessException e) {
-      e.printStackTrace();
+      throw new RuntimeException("Can't get delegation token " + e.getMessage());
     }
     return token;
+  }
+
+  private DelegationTokenIdentifier extractDelegationTokenIdentifier(Token<DelegationTokenIdentifier> dt) throws IOException {
+    DelegationTokenIdentifier identifier = new DelegationTokenIdentifier();
+    ByteArrayInputStream buf = new ByteArrayInputStream(dt.getIdentifier());
+    DataInputStream in = new DataInputStream(buf);
+    identifier.readFields(in);
+    in.close();
+    return identifier;
+  }
+
+  private Token<DelegationTokenIdentifier> extractDelegationToken(String token) throws IOException {
+    Token<DelegationTokenIdentifier> dt = new Token<>();
+    dt.decodeFromUrlString(token);
+    return dt;
+  }
+
+  private synchronized void storeToken(Token<DelegationTokenIdentifier> dt, DelegationTokenIdentifier identifier) throws IllegalAccessException {
+    long tokenRenewInterval = conf.getLong("hive.cluster.delegation.token.renew-interval", 86400000L);
+    @SuppressWarnings("unchecked")
+    Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> tokens=
+            (Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> )
+                    FieldUtils.readField(delegationTokenSecretManager, "currentTokens", true );
+    tokens.put(identifier, new AbstractDelegationTokenSecretManager.DelegationTokenInformation(
+            System.currentTimeMillis() + tokenRenewInterval, dt.getPassword()));
   }
 
   @Override
   @Loggable(value = Loggable.DEBUG, skipResult = true, name = INVOCATION_LOG_NAME)
   public long renew_delegation_token(String token_str_form) throws MetaException, TException {
-    return getPrimaryClient().renew_delegation_token(token_str_form);
+    long renewDate =  getPrimaryClient().renew_delegation_token(token_str_form);
+    try {
+      Token<DelegationTokenIdentifier> delegationToken = extractDelegationToken(token_str_form);
+      DelegationTokenIdentifier identifier = extractDelegationTokenIdentifier(delegationToken);
+      updateToken(delegationToken,identifier, renewDate);
+    } catch (IOException | IllegalAccessException e) {
+      throw new RuntimeException("Can't renew delegation token " + e.getMessage());
+    }
+    return renewDate;
+  }
+
+  private synchronized void updateToken(Token<DelegationTokenIdentifier> dt, DelegationTokenIdentifier identifier,
+                                        long renewalDate) throws IllegalAccessException {
+    @SuppressWarnings("unchecked")
+    Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> tokens=
+            (Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> )
+                    FieldUtils.readField(delegationTokenSecretManager, "currentTokens", true );
+    tokens.put(identifier, new AbstractDelegationTokenSecretManager.DelegationTokenInformation(
+            renewalDate, dt.getPassword()));
   }
 
   @Override
@@ -1639,6 +1664,9 @@ class FederatedHMSHandler extends FacebookBase implements CloseableIHMSHandler {
   @Loggable(value = Loggable.DEBUG, skipResult = true, name = INVOCATION_LOG_NAME)
   public List<TableMeta> get_table_meta(String db_patterns, String tbl_patterns, List<String> tbl_types)
       throws MetaException, TException {
+
+
+
     return databaseMappingService.getPanopticOperationHandler()
         .getTableMeta(db_patterns, tbl_patterns, tbl_types);
   }

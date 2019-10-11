@@ -84,8 +84,6 @@ public class CommonBeans {
     long tokenMaxLifetime = hiveConf.getLong("hive.cluster.delegation.token.max-lifetime", 604800000L);
     long tokenRenewInterval = hiveConf.getLong("hive.cluster.delegation.token.renew-interval", 86400000L);
     long tokenGcInterval = hiveConf.getLong("hive.cluster.delegation.token.gc-interval", 3600000L);
-//    DelegationTokenStore dts = new MemoryTokenStore();
-//    dts.setConf(hiveConf);
     DelegationTokenSecretManager dtsm =  new DelegationTokenSecretManager(
             secretKeyInterval, tokenMaxLifetime, tokenRenewInterval, tokenGcInterval);
     dtsm.startThreads();
