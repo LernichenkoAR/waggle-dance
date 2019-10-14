@@ -35,17 +35,16 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.annotation.PreDestroy;
-import javax.security.auth.login.LoginException;
 
 import org.apache.hadoop.hive.common.auth.HiveAuthUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
+import org.apache.hadoop.hive.metastore.MetaStoreUtils;
 import org.apache.hadoop.hive.metastore.TServerSocketKeepAlive;
 import org.apache.hadoop.hive.shims.ShimLoader;
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hive.service.auth.HiveAuthFactory;
 import org.apache.thrift.TProcessorFactory;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.server.TServer;
@@ -84,15 +83,18 @@ public class MetaStoreProxyServer implements ApplicationRunner {
   private final Lock startLock;
   private final Condition startCondition;
   private TServer tServer;
-
+  private HadoopThriftAuthBridge.Server saslServer;
+  private final WDDelegationTokenSecretManager delegationTokenSecretManager;
   @Autowired
   public MetaStoreProxyServer(
-      HiveConf hiveConf,
-      WaggleDanceConfiguration waggleDanceConfiguration,
-      TProcessorFactory tProcessorFactory) {
+          HiveConf hiveConf,
+          WaggleDanceConfiguration waggleDanceConfiguration,
+          TProcessorFactory tProcessorFactory,
+          WDDelegationTokenSecretManager wdDelegationTokenSecretManager) {
     this.hiveConf = hiveConf;
     this.waggleDanceConfiguration = waggleDanceConfiguration;
     this.tProcessorFactory = tProcessorFactory;
+    this.delegationTokenSecretManager = wdDelegationTokenSecretManager;
     startLock = new ReentrantLock();
     startCondition = startLock.newCondition();
   }
@@ -167,6 +169,10 @@ public class MetaStoreProxyServer implements ApplicationRunner {
         serverSocket = new TServerSocketKeepAlive(serverSocket);
       }
 
+      if (useSASL){
+        saslServer = createSaslServer();
+      }
+
       TTransportFactory transFactory = createTTransportFactory(useFramedTransport, useSASL);
       TProcessorFactory tProcessorFactory = getTProcessorFactory(useSASL);
       LOG.info("Starting WaggleDance Server");
@@ -198,16 +204,16 @@ public class MetaStoreProxyServer implements ApplicationRunner {
     LOG.info("Waggle Dance has stopped");
   }
 
-  private TProcessorFactory getTProcessorFactory(boolean useSASL) throws TTransportException {
+  private TProcessorFactory getTProcessorFactory(boolean useSASL){
     if (useSASL) {
-      return new TProcessorFactorySaslDecorator(tProcessorFactory, hiveConf);
+      return new TProcessorFactorySaslDecorator(tProcessorFactory,saslServer);
     } else {
       return tProcessorFactory;
     }
   }
 
   private TTransportFactory createTTransportFactory(boolean useFramedTransport, boolean useSASL)
-          throws TTransportException, LoginException {
+          throws TTransportException {
     TTransportFactory transFactory;
     if (useFramedTransport) {
       transFactory = new TFramedTransport.Factory();
@@ -215,10 +221,19 @@ public class MetaStoreProxyServer implements ApplicationRunner {
       transFactory = new TTransportFactory();
     }
     if (useSASL) {
-      UserGroupInformation.setConfiguration(hiveConf);
-      transFactory = new HiveAuthFactory(hiveConf).getAuthTransFactory();
+      transFactory = saslServer.createTransportFactory(MetaStoreUtils.getMetaStoreSaslProperties(hiveConf));
     }
     return transFactory;
+  }
+
+  private HadoopThriftAuthBridge.Server createSaslServer() throws TTransportException {
+    UserGroupInformation.setConfiguration(hiveConf);
+    HadoopThriftAuthBridge bridge = ShimLoader.getHadoopThriftAuthBridge();
+    HadoopThriftAuthBridge.Server saslServer = bridge
+            .createServer(hiveConf.getVar(ConfVars.METASTORE_KERBEROS_KEYTAB_FILE),
+                    hiveConf.getVar(ConfVars.METASTORE_KERBEROS_PRINCIPAL));
+    saslServer.setSecretManager(delegationTokenSecretManager);
+    return saslServer;
   }
 
   private TServerSocket createServerSocket(boolean useSSL, int port) throws IOException, TTransportException {

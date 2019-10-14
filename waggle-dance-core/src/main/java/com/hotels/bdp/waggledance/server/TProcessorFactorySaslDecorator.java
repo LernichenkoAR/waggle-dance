@@ -14,29 +14,23 @@
  * limitations under the License.
  */
 package com.hotels.bdp.waggledance.server;
-
-import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.shims.ShimLoader;
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.TProcessorFactory;
 import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
+
 
 public class TProcessorFactorySaslDecorator extends TProcessorFactory {
 
   private final HadoopThriftAuthBridge.Server saslServer;
   private final TProcessorFactory tProcessorFactory;
 
-  TProcessorFactorySaslDecorator(TProcessorFactory tProcessorFactory, HiveConf hiveConf) throws TTransportException {
+
+  TProcessorFactorySaslDecorator(TProcessorFactory tProcessorFactory,
+                                 HadoopThriftAuthBridge.Server saslServer) {
     super(null);
     this.tProcessorFactory = tProcessorFactory;
-    UserGroupInformation.setConfiguration(hiveConf);
-    HadoopThriftAuthBridge hadoopThriftAuthBridge = ShimLoader.getHadoopThriftAuthBridge();
-    saslServer = hadoopThriftAuthBridge
-        .createServer(hiveConf.getVar(HiveConf.ConfVars.METASTORE_KERBEROS_KEYTAB_FILE),
-            hiveConf.getVar(HiveConf.ConfVars.METASTORE_KERBEROS_PRINCIPAL));
+    this.saslServer  = saslServer;
   }
 
   @Override

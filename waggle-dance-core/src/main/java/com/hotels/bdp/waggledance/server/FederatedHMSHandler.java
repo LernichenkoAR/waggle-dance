@@ -15,11 +15,14 @@
  */
 package com.hotels.bdp.waggledance.server;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.api.AbortTxnRequest;
 import org.apache.hadoop.hive.metastore.api.AbortTxnsRequest;
@@ -127,6 +130,10 @@ import org.apache.hadoop.hive.metastore.api.UnknownDBException;
 import org.apache.hadoop.hive.metastore.api.UnknownPartitionException;
 import org.apache.hadoop.hive.metastore.api.UnknownTableException;
 import org.apache.hadoop.hive.metastore.api.UnlockRequest;
+import org.apache.hadoop.hive.thrift.DelegationTokenIdentifier;
+import org.apache.hadoop.hive.thrift.DelegationTokenSecretManager;
+import org.apache.hadoop.security.token.Token;
+import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenSecretManager;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -154,13 +161,16 @@ class FederatedHMSHandler extends FacebookBase implements CloseableIHMSHandler {
   private final MappingEventListener databaseMappingService;
   private final NotifyingFederationService notifyingFederationService;
   private Configuration conf;
+  private final WDDelegationTokenSecretManager delegationTokenSecretManager;
 
   FederatedHMSHandler(
-      MappingEventListener databaseMappingService,
-      NotifyingFederationService notifyingFederationService) {
+          MappingEventListener databaseMappingService,
+          NotifyingFederationService notifyingFederationService,
+          WDDelegationTokenSecretManager wdDelegationTokenSecretManager) {
     super("waggle-dance-handler");
     this.databaseMappingService = databaseMappingService;
     this.notifyingFederationService = notifyingFederationService;
+    this.delegationTokenSecretManager = wdDelegationTokenSecretManager;
     this.notifyingFederationService.subscribe(databaseMappingService);
   }
 
@@ -189,8 +199,6 @@ class FederatedHMSHandler extends FacebookBase implements CloseableIHMSHandler {
       LOG.warn("Error shutting down federated handler", e);
     }
   }
-
-  //////////////////////////////
 
   @Override
   @Loggable(value = Loggable.DEBUG, skipResult = true, name = INVOCATION_LOG_NAME)
@@ -1237,14 +1245,22 @@ class FederatedHMSHandler extends FacebookBase implements CloseableIHMSHandler {
   @Loggable(value = Loggable.DEBUG, skipResult = true, name = INVOCATION_LOG_NAME)
   public String get_delegation_token(String token_owner, String renewer_kerberos_principal_name)
       throws MetaException, TException {
-    return getPrimaryClient().get_delegation_token(token_owner, renewer_kerberos_principal_name);
+    String token = getPrimaryClient().get_delegation_token(token_owner, renewer_kerberos_principal_name);
+    delegationTokenSecretManager.store(token);
+    return token;
   }
+
+
 
   @Override
   @Loggable(value = Loggable.DEBUG, skipResult = true, name = INVOCATION_LOG_NAME)
   public long renew_delegation_token(String token_str_form) throws MetaException, TException {
-    return getPrimaryClient().renew_delegation_token(token_str_form);
+    long renewDate =  getPrimaryClient().renew_delegation_token(token_str_form);
+    delegationTokenSecretManager.renew(token_str_form, renewDate);
+    return renewDate;
   }
+
+
 
   @Override
   @Loggable(value = Loggable.DEBUG, skipResult = true, name = INVOCATION_LOG_NAME)
@@ -1606,6 +1622,9 @@ class FederatedHMSHandler extends FacebookBase implements CloseableIHMSHandler {
   @Loggable(value = Loggable.DEBUG, skipResult = true, name = INVOCATION_LOG_NAME)
   public List<TableMeta> get_table_meta(String db_patterns, String tbl_patterns, List<String> tbl_types)
       throws MetaException, TException {
+
+
+
     return databaseMappingService.getPanopticOperationHandler()
         .getTableMeta(db_patterns, tbl_patterns, tbl_types);
   }

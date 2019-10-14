@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.thrift.DelegationTokenSecretManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,13 +45,14 @@ public class FederatedHMSHandlerFactoryTest {
   private @Mock NotifyingFederationService notifyingFederationService;
   private @Mock MetaStoreMappingFactory metaStoreMappingFactory;
   private @Mock QueryMapping queryMapping;
+  private @Mock DelegationTokenSecretManager delegationTokenSecretManager;
   private FederatedHMSHandlerFactory factory;
 
   @Before
   public void init() {
     when(notifyingFederationService.getAll()).thenReturn(new ArrayList<>());
     factory = new FederatedHMSHandlerFactory(hiveConf, notifyingFederationService, metaStoreMappingFactory,
-        waggleDanceConfiguration, queryMapping);
+        waggleDanceConfiguration, queryMapping, delegationTokenSecretManager);
   }
 
   @Test
@@ -64,7 +66,7 @@ public class FederatedHMSHandlerFactoryTest {
   public void prefixedDatabase() throws Exception {
     when(waggleDanceConfiguration.getDatabaseResolution()).thenReturn(DatabaseResolution.PREFIXED);
     factory = new FederatedHMSHandlerFactory(hiveConf, notifyingFederationService, metaStoreMappingFactory,
-        waggleDanceConfiguration, queryMapping);
+        waggleDanceConfiguration, queryMapping, delegationTokenSecretManager);
     CloseableIHMSHandler handler = factory.create();
     assertThat(handler, is(instanceOf(FederatedHMSHandler.class)));
   }
@@ -72,7 +74,7 @@ public class FederatedHMSHandlerFactoryTest {
   @Test(expected = WaggleDanceException.class)
   public void noMode() {
     factory = new FederatedHMSHandlerFactory(hiveConf, notifyingFederationService, metaStoreMappingFactory,
-        waggleDanceConfiguration, queryMapping);
+        waggleDanceConfiguration, queryMapping, delegationTokenSecretManager);
     factory.create();
   }
 
