@@ -23,7 +23,6 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 
 import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.thrift.DelegationTokenSecretManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,7 +44,7 @@ public class FederatedHMSHandlerFactoryTest {
   private @Mock NotifyingFederationService notifyingFederationService;
   private @Mock MetaStoreMappingFactory metaStoreMappingFactory;
   private @Mock QueryMapping queryMapping;
-  private @Mock DelegationTokenSecretManager delegationTokenSecretManager;
+  private @Mock WDDelegationTokenSecretManager delegationTokenSecretManager;
   private FederatedHMSHandlerFactory factory;
 
   @Before
