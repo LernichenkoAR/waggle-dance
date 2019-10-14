@@ -18,6 +18,7 @@ package com.hotels.bdp.waggledance.context;
 import java.io.IOException;
 import java.util.Map;
 
+import com.hotels.bdp.waggledance.server.WDDelegationTokenSecretManager;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.thrift.DelegationTokenSecretManager;
@@ -79,12 +80,12 @@ public class CommonBeans {
 
   @Bean
   @Scope("singleton")
-  public DelegationTokenSecretManager delegationTokenSecretManager(HiveConf hiveConf) throws IOException {
+  public WDDelegationTokenSecretManager delegationTokenSecretManager(HiveConf hiveConf) throws IOException {
     long secretKeyInterval = hiveConf.getLong("hive.cluster.delegation.key.update-interval", 86400000L);
     long tokenMaxLifetime = hiveConf.getLong("hive.cluster.delegation.token.max-lifetime", 604800000L);
     long tokenRenewInterval = hiveConf.getLong("hive.cluster.delegation.token.renew-interval", 86400000L);
     long tokenGcInterval = hiveConf.getLong("hive.cluster.delegation.token.gc-interval", 3600000L);
-    DelegationTokenSecretManager dtsm =  new DelegationTokenSecretManager(
+    WDDelegationTokenSecretManager dtsm =  new WDDelegationTokenSecretManager(
             secretKeyInterval, tokenMaxLifetime, tokenRenewInterval, tokenGcInterval);
     dtsm.startThreads();
     return dtsm;

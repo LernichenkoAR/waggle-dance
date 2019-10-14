@@ -161,15 +161,16 @@ class FederatedHMSHandler extends FacebookBase implements CloseableIHMSHandler {
   private final MappingEventListener databaseMappingService;
   private final NotifyingFederationService notifyingFederationService;
   private Configuration conf;
-  private final DelegationTokenSecretManager delegationTokenSecretManager;
+  private final WDDelegationTokenSecretManager delegationTokenSecretManager;
 
   FederatedHMSHandler(
           MappingEventListener databaseMappingService,
-          NotifyingFederationService notifyingFederationService, DelegationTokenSecretManager delegationTokenSecretManager) {
+          NotifyingFederationService notifyingFederationService,
+          WDDelegationTokenSecretManager wdDelegationTokenSecretManager) {
     super("waggle-dance-handler");
     this.databaseMappingService = databaseMappingService;
     this.notifyingFederationService = notifyingFederationService;
-    this.delegationTokenSecretManager = delegationTokenSecretManager;
+    this.delegationTokenSecretManager = wdDelegationTokenSecretManager;
     this.notifyingFederationService.subscribe(databaseMappingService);
   }
 
@@ -1245,64 +1246,21 @@ class FederatedHMSHandler extends FacebookBase implements CloseableIHMSHandler {
   public String get_delegation_token(String token_owner, String renewer_kerberos_principal_name)
       throws MetaException, TException {
     String token = getPrimaryClient().get_delegation_token(token_owner, renewer_kerberos_principal_name);
-    try {
-      Token<DelegationTokenIdentifier> dt = extractDelegationToken(token);
-      DelegationTokenIdentifier identifier = extractDelegationTokenIdentifier(dt);
-      storeToken(dt, identifier);
-    } catch (IOException | IllegalAccessException e) {
-      throw new RuntimeException("Can't get delegation token " + e.getMessage());
-    }
+    delegationTokenSecretManager.store(token);
     return token;
   }
 
-  private DelegationTokenIdentifier extractDelegationTokenIdentifier(Token<DelegationTokenIdentifier> dt) throws IOException {
-    DelegationTokenIdentifier identifier = new DelegationTokenIdentifier();
-    ByteArrayInputStream buf = new ByteArrayInputStream(dt.getIdentifier());
-    DataInputStream in = new DataInputStream(buf);
-    identifier.readFields(in);
-    in.close();
-    return identifier;
-  }
 
-  private Token<DelegationTokenIdentifier> extractDelegationToken(String token) throws IOException {
-    Token<DelegationTokenIdentifier> dt = new Token<>();
-    dt.decodeFromUrlString(token);
-    return dt;
-  }
-
-  private synchronized void storeToken(Token<DelegationTokenIdentifier> dt, DelegationTokenIdentifier identifier) throws IllegalAccessException {
-    long tokenRenewInterval = conf.getLong("hive.cluster.delegation.token.renew-interval", 86400000L);
-    @SuppressWarnings("unchecked")
-    Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> tokens=
-            (Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> )
-                    FieldUtils.readField(delegationTokenSecretManager, "currentTokens", true );
-    tokens.put(identifier, new AbstractDelegationTokenSecretManager.DelegationTokenInformation(
-            System.currentTimeMillis() + tokenRenewInterval, dt.getPassword()));
-  }
 
   @Override
   @Loggable(value = Loggable.DEBUG, skipResult = true, name = INVOCATION_LOG_NAME)
   public long renew_delegation_token(String token_str_form) throws MetaException, TException {
     long renewDate =  getPrimaryClient().renew_delegation_token(token_str_form);
-    try {
-      Token<DelegationTokenIdentifier> delegationToken = extractDelegationToken(token_str_form);
-      DelegationTokenIdentifier identifier = extractDelegationTokenIdentifier(delegationToken);
-      updateToken(delegationToken,identifier, renewDate);
-    } catch (IOException | IllegalAccessException e) {
-      throw new RuntimeException("Can't renew delegation token " + e.getMessage());
-    }
+    delegationTokenSecretManager.renew(token_str_form, renewDate);
     return renewDate;
   }
 
-  private synchronized void updateToken(Token<DelegationTokenIdentifier> dt, DelegationTokenIdentifier identifier,
-                                        long renewalDate) throws IllegalAccessException {
-    @SuppressWarnings("unchecked")
-    Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> tokens=
-            (Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> )
-                    FieldUtils.readField(delegationTokenSecretManager, "currentTokens", true );
-    tokens.put(identifier, new AbstractDelegationTokenSecretManager.DelegationTokenInformation(
-            renewalDate, dt.getPassword()));
-  }
+
 
   @Override
   @Loggable(value = Loggable.DEBUG, skipResult = true, name = INVOCATION_LOG_NAME)

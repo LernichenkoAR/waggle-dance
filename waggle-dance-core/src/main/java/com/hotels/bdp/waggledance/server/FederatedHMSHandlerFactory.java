@@ -39,7 +39,7 @@ public class FederatedHMSHandlerFactory {
   private final MetaStoreMappingFactory metaStoreMappingFactory;
   private final WaggleDanceConfiguration waggleDanceConfiguration;
   private final QueryMapping queryMapping;
-  private final DelegationTokenSecretManager delegationTokenSecretManager;
+  private final WDDelegationTokenSecretManager delegationTokenSecretManager;
 
   @Autowired
   public FederatedHMSHandlerFactory(
@@ -47,20 +47,22 @@ public class FederatedHMSHandlerFactory {
           NotifyingFederationService notifyingFederationService,
           MetaStoreMappingFactory metaStoreMappingFactory,
           WaggleDanceConfiguration waggleDanceConfiguration,
-          QueryMapping queryMapping, DelegationTokenSecretManager delegationTokenSecretManager) {
+          QueryMapping queryMapping,
+          WDDelegationTokenSecretManager wdDelegationTokenSecretManager) {
     this.hiveConf = hiveConf;
     this.notifyingFederationService = notifyingFederationService;
     this.metaStoreMappingFactory = metaStoreMappingFactory;
     this.waggleDanceConfiguration = waggleDanceConfiguration;
     this.queryMapping = queryMapping;
-    this.delegationTokenSecretManager = delegationTokenSecretManager;
+    this.delegationTokenSecretManager = wdDelegationTokenSecretManager;
   }
 
   public CloseableIHMSHandler create() {
     MappingEventListener service = createDatabaseMappingService();
     MonitoredDatabaseMappingService monitoredService = new MonitoredDatabaseMappingService(service);
 
-    CloseableIHMSHandler baseHandler = new FederatedHMSHandler(monitoredService, notifyingFederationService, delegationTokenSecretManager);
+    CloseableIHMSHandler baseHandler = new FederatedHMSHandler(monitoredService, notifyingFederationService,
+            delegationTokenSecretManager);
     HiveConf conf = new HiveConf(hiveConf);
     baseHandler.setConf(conf);
     return baseHandler;
