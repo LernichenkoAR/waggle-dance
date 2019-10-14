@@ -70,12 +70,6 @@ public class WDDelegationTokenSecretManager extends DelegationTokenSecretManager
   }
 
   private synchronized void storeToken(Token<DelegationTokenIdentifier> dt, DelegationTokenIdentifier identifier) {
-//    @SuppressWarnings("unchecked")
-//    Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> tokens=
-//        (Map<Object,  AbstractDelegationTokenSecretManager.DelegationTokenInformation> )
-//            FieldUtils.readField(super, "currentTokens", true );
-//    tokens.put(identifier, new AbstractDelegationTokenSecretManager.DelegationTokenInformation(
-//        System.currentTimeMillis() + tokenRenewInterval, dt.getPassword()));
     currentTokens.put(identifier, new AbstractDelegationTokenSecretManager.DelegationTokenInformation(
             System.currentTimeMillis() + tokenRenewInterval, dt.getPassword()));
   }
