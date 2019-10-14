@@ -121,7 +121,6 @@ import org.apache.hadoop.hive.metastore.api.TableStatsResult;
 import org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface;
 import org.apache.hadoop.hive.metastore.api.Type;
 import org.apache.hadoop.hive.metastore.api.UnlockRequest;
-import org.apache.hadoop.hive.thrift.DelegationTokenSecretManager;
 import org.apache.thrift.TException;
 import org.junit.Before;
 import org.junit.Test;
@@ -148,7 +147,7 @@ public class FederatedHMSHandlerTest {
   private @Mock NotifyingFederationService notifyingFederationService;
   private @Mock DatabaseMapping primaryMapping;
   private @Mock Iface primaryClient;
-  private @Mock DelegationTokenSecretManager delegationTokenSecretManager;
+  private @Mock WDDelegationTokenSecretManager delegationTokenSecretManager;
   private FederatedHMSHandler handler;
 
   @Before
