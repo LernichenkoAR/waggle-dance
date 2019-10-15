@@ -122,7 +122,6 @@ import org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore.Iface;
 import org.apache.hadoop.hive.metastore.api.Type;
 import org.apache.hadoop.hive.metastore.api.UnlockRequest;
 import org.apache.thrift.TException;
-import org.iq80.leveldb.DB;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -148,12 +147,12 @@ public class FederatedHMSHandlerTest {
   private @Mock NotifyingFederationService notifyingFederationService;
   private @Mock DatabaseMapping primaryMapping;
   private @Mock Iface primaryClient;
-
+  private @Mock WDDelegationTokenSecretManager delegationTokenSecretManager;
   private FederatedHMSHandler handler;
 
   @Before
   public void setUp() throws NoSuchObjectException {
-    handler = new FederatedHMSHandler(databaseMappingService, notifyingFederationService);
+    handler = new FederatedHMSHandler(databaseMappingService, notifyingFederationService, delegationTokenSecretManager);
     when(databaseMappingService.primaryDatabaseMapping()).thenReturn(primaryMapping);
     when(databaseMappingService.getDatabaseMappings()).thenReturn(Collections.singletonList(primaryMapping));
     when(primaryMapping.getClient()).thenReturn(primaryClient);
@@ -1394,6 +1393,7 @@ public class FederatedHMSHandlerTest {
   public void get_delegation_token() throws TException {
     String expected = "expected";
     when(primaryClient.get_delegation_token("owner", "kerberos_principal")).thenReturn(expected);
+
     String result = handler.get_delegation_token("owner", "kerberos_principal");
     assertThat(result, is(expected));
   }
@@ -1614,9 +1614,15 @@ public class FederatedHMSHandlerTest {
   @Test
   public void alter_table_with_cascade() throws TException {
     Table table = new Table();
+    table.setDbName(DB_P);
+    Table tableTransformed = new Table();
+    String alternativeDB = "wd";
+    tableTransformed.setDbName(alternativeDB);
+    when(primaryMapping.transformInboundDatabaseName(DB_P)).thenReturn(alternativeDB);
+    when(primaryMapping.transformInboundTable(table)).thenReturn(tableTransformed);
     handler.alter_table_with_cascade(DB_P, "table", table, true);
-    verify(primaryMapping).checkWritePermissions(DB_P);
-    verify(primaryClient).alter_table_with_cascade(DB_P, "table", table, true);
+    verify(primaryMapping, times(2)).checkWritePermissions(DB_P);
+    verify(primaryClient).alter_table_with_cascade(alternativeDB, "table", tableTransformed, true);
   }
 
   @Test

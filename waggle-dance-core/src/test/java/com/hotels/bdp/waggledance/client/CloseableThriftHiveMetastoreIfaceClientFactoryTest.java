@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 
 import static com.hotels.bdp.waggledance.api.model.AbstractMetaStore.newFederatedInstance;
 
+import com.hotels.bdp.waggledance.conf.WaggleDanceConfiguration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.junit.Before;
@@ -44,11 +45,11 @@ public class CloseableThriftHiveMetastoreIfaceClientFactoryTest {
   private CloseableThriftHiveMetastoreIfaceClientFactory factory;
   private @Mock TunnelingMetaStoreClientFactory tunnelingMetaStoreClientFactory;
   private @Mock DefaultMetaStoreClientFactory defaultMetaStoreClientFactory;
-
+  private @Mock WaggleDanceConfiguration waggleDanceConfiguration;
   @Before
   public void setUp() {
     factory = new CloseableThriftHiveMetastoreIfaceClientFactory(tunnelingMetaStoreClientFactory,
-        defaultMetaStoreClientFactory);
+        defaultMetaStoreClientFactory, waggleDanceConfiguration);
   }
 
   @Test
