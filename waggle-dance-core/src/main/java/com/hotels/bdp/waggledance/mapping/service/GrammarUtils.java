@@ -36,7 +36,11 @@ public final class GrammarUtils {
 
   @VisibleForTesting
   static String[] splitPattern(String prefix, String pattern) {
+<<<<<<< Updated upstream
     String prefixCanonized = toCanon(prefix);
+=======
+    String prefixCanonized = toCanonical(prefix);
+>>>>>>> Stashed changes
     if (pattern.startsWith(prefix) || pattern.startsWith(prefixCanonized)) {
       return new String[] { prefix, pattern.substring(prefix.length()) };
     }
@@ -61,7 +65,12 @@ public final class GrammarUtils {
     return new String[] {};
   }
 
+<<<<<<< Updated upstream
   private static String toCanon(String prefix) {
+=======
+
+  private static String toCanonical(String prefix) {
+>>>>>>> Stashed changes
     return prefix.replace("_",".");
   }
 
