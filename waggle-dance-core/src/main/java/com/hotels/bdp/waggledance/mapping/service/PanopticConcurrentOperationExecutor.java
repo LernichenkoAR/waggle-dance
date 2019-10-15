@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import com.hotels.bdp.waggledance.api.WaggleDanceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +45,9 @@ public class PanopticConcurrentOperationExecutor implements PanopticOperationExe
       List<? extends RequestCallable<List<T>>> allRequests,
       long requestTimeout,
       String errorMessage) {
+    if (allRequests.size() == 0) {
+      throw new WaggleDanceException("Can not execute empty request's list");
+    }
     ExecutorService executorService = Executors.newFixedThreadPool(allRequests.size());
     try {
       List<T> allResults = new ArrayList<>();

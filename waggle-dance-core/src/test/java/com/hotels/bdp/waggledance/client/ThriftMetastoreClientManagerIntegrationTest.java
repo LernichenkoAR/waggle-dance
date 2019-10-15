@@ -15,7 +15,7 @@
  */
 package com.hotels.bdp.waggledance.client;
 
-import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
@@ -36,8 +36,8 @@ public class ThriftMetastoreClientManagerIntegrationTest {
 
   private final HiveCompatibleThriftHiveMetastoreIfaceFactory hiveCompatibleThriftHiveMetastoreIfaceFactory = new HiveCompatibleThriftHiveMetastoreIfaceFactory();
   private final HiveConf hiveConf = new HiveConf();
-  private final int connectionTimeout = 10;
   private final String databaseName = "dbname";
+  private final int connectionTimeout = 600;
 
   public @Rule ThriftHiveMetaStoreJUnitRule hive = new ThriftHiveMetaStoreJUnitRule(databaseName);
   private ThriftMetastoreClientManager manager;
@@ -72,7 +72,7 @@ public class ThriftMetastoreClientManagerIntegrationTest {
     try {
       manager.open();
     } catch (RuntimeException e) {
-      assertThat(e.getMessage(), containsString("java.net.ConnectException: Connection refused"));
+      assertThat(e.getMessage(), containsString("Connection refused"));
     }
   }
 }

@@ -293,7 +293,7 @@ public class WaggleDanceRunner implements WaggleDance.ContextListener {
   public void waitForService() throws Exception {
     long delay = 1;
     while (applicationContext == null) {
-      if (delay >= 15) {
+      if (delay >= 1500) {
         throw new TimeoutException("Service did not start");
       }
       Thread.sleep(TimeUnit.SECONDS.toMillis(++delay));
@@ -306,7 +306,7 @@ public class WaggleDanceRunner implements WaggleDance.ContextListener {
       getProxy().stop();
       long delay = 1;
       while (applicationContext != null) {
-        if (delay >= 15) {
+        if (delay >= 1500) {
           throw new TimeoutException("Service did not stop");
         }
         Thread.sleep(TimeUnit.SECONDS.toMillis(++delay));

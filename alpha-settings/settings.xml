@@ -1,0 +1,35 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                      http://maven.apache.org/xsd/settings-1.0.0.xsd">
+    
+	<mirrors>
+      <mirror>
+        <id>Mirror of central</id>
+        <name>Mirror of central</name>
+        <url>http://sbtnexus.ca.sbrf.ru:8081/nexus/content/groups/public</url>
+        <mirrorOf>central</mirrorOf>
+      </mirror>
+    </mirrors>
+    
+	<servers>
+		<server>
+			<id>Bigdata_release</id>
+			<username>Bigdata-build</username>
+			<password>Bigdatabuild</password>
+		</server>
+	   
+		<server>
+			<id>Bigdata_snapshot</id>
+			<username>Bigdata-build</username>
+			<password>Bigdatabuild</password>
+		</server>
+		
+		<server>
+			<id>Mirror of central</id>
+			<username>CI_CI00757159</username>
+			<password>CI00757159_CI</password>
+		</server>
+	</servers>
+
+</settings>

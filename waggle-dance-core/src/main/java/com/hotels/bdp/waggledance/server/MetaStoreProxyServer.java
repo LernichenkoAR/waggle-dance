@@ -39,10 +39,13 @@ import javax.annotation.PreDestroy;
 import org.apache.hadoop.hive.common.auth.HiveAuthUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
+import org.apache.hadoop.hive.metastore.MetaStoreUtils;
 import org.apache.hadoop.hive.metastore.TServerSocketKeepAlive;
 import org.apache.hadoop.hive.shims.ShimLoader;
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.StringUtils;
+import org.apache.thrift.TProcessorFactory;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadPoolServer;
@@ -76,19 +79,22 @@ public class MetaStoreProxyServer implements ApplicationRunner {
 
   private final HiveConf hiveConf;
   private final WaggleDanceConfiguration waggleDanceConfiguration;
-  private final TSetIpAddressProcessorFactory tSetIpAddressProcessorFactory;
+  private final TProcessorFactory tProcessorFactory;
   private final Lock startLock;
   private final Condition startCondition;
   private TServer tServer;
-
+  private HadoopThriftAuthBridge.Server saslServer;
+  private final WDDelegationTokenSecretManager delegationTokenSecretManager;
   @Autowired
   public MetaStoreProxyServer(
-      HiveConf hiveConf,
-      WaggleDanceConfiguration waggleDanceConfiguration,
-      TSetIpAddressProcessorFactory tSetIpAddressProcessorFactory) {
+          HiveConf hiveConf,
+          WaggleDanceConfiguration waggleDanceConfiguration,
+          TProcessorFactory tProcessorFactory,
+          WDDelegationTokenSecretManager wdDelegationTokenSecretManager) {
     this.hiveConf = hiveConf;
     this.waggleDanceConfiguration = waggleDanceConfiguration;
-    this.tSetIpAddressProcessorFactory = tSetIpAddressProcessorFactory;
+    this.tProcessorFactory = tProcessorFactory;
+    this.delegationTokenSecretManager = wdDelegationTokenSecretManager;
     startLock = new ReentrantLock();
     startCondition = startLock.newCondition();
   }
@@ -125,7 +131,7 @@ public class MetaStoreProxyServer implements ApplicationRunner {
       }));
 
       AtomicBoolean startedServing = new AtomicBoolean();
-      startWaggleDance(ShimLoader.getHadoopThriftAuthBridge(), startLock, startCondition, startedServing);
+      startWaggleDance(startLock, startCondition, startedServing);
     } catch (Throwable t) {
       // Catch the exception, log it and rethrow it.
       LOG.error("WaggleDance Thrift Server threw an exception...", t);
@@ -136,14 +142,12 @@ public class MetaStoreProxyServer implements ApplicationRunner {
   /**
    * Start Metastore based on a passed {@link HadoopThriftAuthBridge}
    *
-   * @param bridge
    * @param startLock
    * @param startCondition
    * @param startedServing
    * @throws Throwable
    */
   private void startWaggleDance(
-      HadoopThriftAuthBridge bridge,
       Lock startLock,
       Condition startCondition,
       AtomicBoolean startedServing)
@@ -157,6 +161,7 @@ public class MetaStoreProxyServer implements ApplicationRunner {
       boolean tcpKeepAlive = hiveConf.getBoolVar(ConfVars.METASTORE_TCP_KEEP_ALIVE);
       boolean useFramedTransport = hiveConf.getBoolVar(ConfVars.METASTORE_USE_THRIFT_FRAMED_TRANSPORT);
       boolean useSSL = hiveConf.getBoolVar(ConfVars.HIVE_METASTORE_USE_SSL);
+      boolean useSASL = hiveConf.getBoolVar(ConfVars.METASTORE_USE_THRIFT_SASL);
 
       TServerSocket serverSocket = createServerSocket(useSSL, waggleDanceConfiguration.getPort());
 
@@ -164,11 +169,16 @@ public class MetaStoreProxyServer implements ApplicationRunner {
         serverSocket = new TServerSocketKeepAlive(serverSocket);
       }
 
-      TTransportFactory transFactory = useFramedTransport ? new TFramedTransport.Factory() : new TTransportFactory();
+      if (useSASL){
+        saslServer = createSaslServer();
+      }
+
+      TTransportFactory transFactory = createTTransportFactory(useFramedTransport, useSASL);
+      TProcessorFactory tProcessorFactory = getTProcessorFactory(useSASL);
       LOG.info("Starting WaggleDance Server");
 
       TThreadPoolServer.Args args = new TThreadPoolServer.Args(serverSocket)
-          .processorFactory(tSetIpAddressProcessorFactory)
+          .processorFactory(tProcessorFactory)
           .transportFactory(transFactory)
           .protocolFactory(new TBinaryProtocol.Factory())
           .minWorkerThreads(minWorkerThreads)
@@ -192,6 +202,38 @@ public class MetaStoreProxyServer implements ApplicationRunner {
       throw x;
     }
     LOG.info("Waggle Dance has stopped");
+  }
+
+  private TProcessorFactory getTProcessorFactory(boolean useSASL){
+    if (useSASL) {
+      return new TProcessorFactorySaslDecorator(tProcessorFactory,saslServer);
+    } else {
+      return tProcessorFactory;
+    }
+  }
+
+  private TTransportFactory createTTransportFactory(boolean useFramedTransport, boolean useSASL)
+          throws TTransportException {
+    TTransportFactory transFactory;
+    if (useFramedTransport) {
+      transFactory = new TFramedTransport.Factory();
+    } else {
+      transFactory = new TTransportFactory();
+    }
+    if (useSASL) {
+      transFactory = saslServer.createTransportFactory(MetaStoreUtils.getMetaStoreSaslProperties(hiveConf));
+    }
+    return transFactory;
+  }
+
+  private HadoopThriftAuthBridge.Server createSaslServer() throws TTransportException {
+    UserGroupInformation.setConfiguration(hiveConf);
+    HadoopThriftAuthBridge bridge = ShimLoader.getHadoopThriftAuthBridge();
+    HadoopThriftAuthBridge.Server saslServer = bridge
+            .createServer(hiveConf.getVar(ConfVars.METASTORE_KERBEROS_KEYTAB_FILE),
+                    hiveConf.getVar(ConfVars.METASTORE_KERBEROS_PRINCIPAL));
+    saslServer.setSecretManager(delegationTokenSecretManager);
+    return saslServer;
   }
 
   private TServerSocket createServerSocket(boolean useSSL, int port) throws IOException, TTransportException {

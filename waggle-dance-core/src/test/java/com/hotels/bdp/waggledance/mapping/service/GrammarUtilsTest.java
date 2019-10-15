@@ -155,4 +155,10 @@ public class GrammarUtilsTest {
     assertThat(splits.get("baggle_"), is("*"));
   }
 
+  @Test
+  public void canonizedPattern() {
+    Map<String, String> splits = GrammarUtils.selectMatchingPrefixes(ImmutableSet.of(PREFIX, "baggle_"), "waggle.baggle");
+    assertThat(splits.size(), is(1));
+    assertThat(splits.get(PREFIX), is("baggle"));
+  }
 }
